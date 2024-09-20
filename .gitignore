@@ -1,2 +1,6 @@
 src_py/*~
+src_py/*pycache*
 trial_runs/*
+init_structs/*
+old_runs/*
+src_sh/change_and_submit.sh
