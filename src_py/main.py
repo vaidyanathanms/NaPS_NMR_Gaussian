@@ -60,7 +60,7 @@ scr_head   = 'naps_analysis' # head dir for scratch outputs
 
 inp_struct_list = find_inp_files(guess_dir, spec_struct)
 
-#---------main analysis------------------------------------------
+#---------Main analysis------------------------------------------
 for structs in inp_struct_list:
 
     workdir1 = scratchdir + '/' + scr_head   
