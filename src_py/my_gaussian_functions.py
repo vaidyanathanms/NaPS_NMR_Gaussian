@@ -26,43 +26,64 @@ def cpy_main_files(dum_maindir,dum_destdir,fylname):
     desfyl = dum_destdir + '/' + fylname
     shutil.copy2(srcfyl, desfyl)
 
-def find_inp_files(inpdir, inpfyle = 'all'):
+def find_inp_files(init_dir, inpstruct = 'all'):
 
-    if not os.path.isdir(avog_dir):
-        raise RuntimeError(avog_dir + " not found!")
-    
-    if inpfyle == 'all':
-        inplist = glob.glob(avog_dir + '/*.cml')
+    if not os.path.isdir(init_dir):
+        raise RuntimeError(init_dir + " not found!")
+
+    if isinstance(inpstruct,str):
+        if inpstruct == 'all':
+            inplist = glob.glob(init_dir + '/*.cml') #Check cml files first
+            if inpstruct == []:
+                raise RuntimeError('No cml input files found in ' + init_dir)
+        else:
+            if not os.path.exists(init_dir + '/' + inpstruct):
+                raise RuntimeError(inpfyle + ' not found in ' + init_dir)
+            inplist = [init_dir + '/' + inpstruct]
+    elif isinstance(inpstruct,list):
+        inplist = []
+        for fyle in inpstruct:                
+            fpath = init_dir + '/' + fyle
+            if not os.path.exists(fpath):
+                print('ERROR', fpath, 'not found')
+            else:
+                inplist.append(fpath)
         if inplist == []:
-            raise RuntimeError('No input files found in ' + avog_dir)
+             raise RuntimeError('No file in ' + inpstruct + \
+                                ' found in ' + init_dir)
     else:
-        if not os.path.exists(avog_dir + '/' + inpfyle):
-            raise RuntimeError(inpfyle + ' not found in ' + avog_dir)
-        inplist = [avog_dir + '/' + inpfyle]
+        raise RuntimeError('Unknown type for spec_struct variable')
+    
     return inplist
 
-def edit_gen_inp_gauss_files(com_files,avog_inp_fyle,basis_fun='6-31G**',\
-                             maxcycle=100,maxstep=30,solvent='water',\
-                             scrf='pcm',multiplicity=1):
+def edit_gen_inp_gauss_files(com_files,inpfyle,basis_fun='6-31G**',\
+                             maxcycle=100,maxstep=30,maxEstep=600,scrf='pcm',\
+                             solvent='water',pop_style='reg',multiplicity=1):
 
-    # Obtain total charge from Avogadro file
-    tree = ET.parse(avog_inp_fyle)  # Read XML data from file
+    # Edit headers and options for calculations
+    struct_name = inpfyle.split('.')[0] # Define structure name
+
+    # Obtain total charge from Avogadro file or from filename
+    tree = ET.parse(inpfyle)  # Read XML data from file
     root = tree.getroot()
     totcharge = root.get('formalCharge')
-    
-    # Edit headers and options for calculations
-    struct_name = avog_inp_fyle.split('.')[0]
+    if totcharge is None: totcharge=get_charges_from_fname(struct_name)
+    print('Net_Charge: ', totcharge)
+
+    # Edit com files
     for fyle in com_files:
         fr  = open(fyle,'r')
-        fw  = open(fyle.split('_')[0]+'.com','w')
+        fw  = open(struct_name + '_' + fyle.split('_')[0]+'.com','w')
         fid = fr.read().replace("py_basis",basis_fun)\
-            replace("py_maxcyc",maxcycle)\
-            replace("py_maxstep",maxstep)\
-            replace("py_cavity",scrf)\
-            replace("py_solv",solvent)\
-            replace("py_struct",struct_name)\
-            replace("py_charge",totcharge)\
-            replace("py_mult",multiplicity)
+            .replace("py_maxcyc",str(maxcycle))\
+            .replace("py_maxstep",str(maxstep))\
+            .replace("py_maxEstep",str(maxEstep))\
+            .replace("py_cavity",scrf)\
+            .replace("py_solv",solvent)\
+            .replace("py_popstyle",pop_style)\
+            .replace("py_struct",struct_name)\
+            .replace("py_charge",str(totcharge))\
+            .replace("py_mult",str(multiplicity))
         fw.write(fid)
         fr.close()
 
@@ -77,24 +98,39 @@ def edit_gen_inp_gauss_files(com_files,avog_inp_fyle,basis_fun='6-31G**',\
 
         fw.write('\n') # Extra line at the end
 
-def run_gaussian(inpjob,structname,outjob='submit.sh',tot_hrs=1,\
-                 tot_nodes=1,tot_cores=1):
+def get_charges_from_fname(inpname):
+    str_main = inpname.split('_')
+    q_str    = [x for x in str_main if x[0] == 'q']
+    if len(q_str) != 1:
+        raise RuntimeError('Input file format should have *_qxy_* in \
+        its filename and should repeat ONLY once!')
+    qval = int(re.findall(r'\d+', q_str[0])[0])
+    qval = -qval if 'm' in q_str[0] else qval
+    return(qval)
+    
+def run_gaussian(inpjob,structname,ginput='optim_var.com',\
+                 outjob='submit.sh',tot_hrs=1,tot_nodes=1,tot_cores=1):
 
     if not os.path.exists(inpjob):
         raise RuntimeError('ERROR: ' + inpjob + ' not found')
-    
-    jobstr = "job_" + structname
+
+    ginp_main = structname + '_' + ginput.split('_')[0]
+    if not os.path.exists(ginp_main+'.com'):
+        raise RuntimeError('ERROR: ' + ginp_main + ' not found')
+        
+    jobstr = structname
     fr  = open(inpjob,'r')
     fw  = open(outjob,'w')
-    fid = fr.read().replace("py_jobname",jobstr).\
+    fid = fr.read().replace("py_jname",jobstr).\
           replace("py_tottime",str(tot_hrs)).\
           replace("py_nnodes",str(tot_nodes)).\
           replace("py_ncores",str(tot_cores)).\
-          replace("py_nptot",str(tot_cores*tot_nodes))
+          replace("py_ncores",str(tot_cores)).\
+          replace("py_nptot",str(tot_cores*tot_nodes)).\
+          replace("py_ginput",str(ginp_main))
     fw.write(fid)
     fw.close()
     fr.close()
-
     subprocess.call(["sbatch", outjob])
     
     
@@ -104,6 +140,7 @@ def clean_backup_initfiles(destdir,structfile):
     if not os.path.isdir(initdir):
         os.mkdir(initdir)
 
+    print(structfile)
     if os.path.exists(structfile):
         cpy_main_files(destdir,initdir,structfile)
 
@@ -113,94 +150,7 @@ def clean_backup_initfiles(destdir,structfile):
             cpy_main_files(destdir,initdir,fyl)
             os.remove(fyl)
 
-def find_datafyle(nch_free,archstr,casenum,destdir):
-
-    os.chdir(destdir)
-    curr_dir = os.getcwd()
-    datafyle = "PEdata_"+str(nch_free)+"_" +archstr+ \
-               "_"+str(casenum)+".dat"
-
-    if not os.path.exists(datafyle):
-        print ("Data file not found ..")
-        print ("Making datafile from restart files")
-        restart_fyles = glob.glob('archival_*')
-        
-        if restart_fyles == []:
-            return 'ERROR'
-
-        if not os.path.exists('lmp_mesabi'):
-        
-            src_lmp = '/home/dorfmank/vsethura/mylammps/src/lmp_mesabi'
-            destfyle = curr_dir + '/lmp_mesabi'
-            shutil.copy2(src_lmp,destfyle)
-
-        subprocess.call(['mpirun','-np','48','./lmp_mesabi','-r',restart_fyles[0],datafyle])
-        
-    return datafyle
-
-
-def find_latest_trajfyle(pref,destdir):
-    
-    os.chdir(destdir)
-    traj_arr = glob.glob(pref)
-    if traj_arr == []:
-        return 'ERROR'
-    latest_fyle = max(traj_arr,key = os.path.getctime)
-    return latest_fyle
-
-
-def edit_generate_anainp_files(inpdata,inptraj,nch_tot,nch_free,\
-                               nch_graft,cutoff,listnum):
-    
-    if not os.path.exists('anainp_var.txt'):
-        print('ERROR: pe_params not found')
-        return
-
-    fr  = open('anainp_var.txt','r')
-    outana = 'anainp_' + str(listnum) + '.txt'
-    fw  = open(outana,'w')
-
-    datafyle = re.split('/',inpdata)
-    dataname = datafyle[len(datafyle)-1]
-
-    trajfyle = re.split('/',inptraj)
-    trajname = trajfyle[len(trajfyle)-1]
-    
-
-    fid = fr.read().replace("py_datafyl",dataname).\
-          replace("py_trajfyl",trajname).\
-          replace("py_ntotchains",str(nch_tot)).\
-          replace("py_nfrchains", str(nch_free)).\
-          replace("py_ngrchains",str(nch_graft)).\
-          replace("py_cutoff",str(cutoff))
-    fw.write(fid)
-    fw.close()
-    fr.close()
-
-def run_analysis(nch_free,pdifree,casenum,dirstr,inpjob,outjob,listnum,destdir):
-
-    if not os.path.exists(inpjob):
-        print('ERROR: ', inpjob,'not found')
-        return
-    
-    jobstr = "ana_" + str(nch_free) + "_" + str(pdifree) + "_" \
-             + str(casenum) + "_" + dirstr
-    fr  = open(inpjob,'r')
-    fw  = open(outjob,'w')
-    fid = fr.read().replace("py_jobname",jobstr).\
-          replace("py_freech",str(nch_free)).\
-          replace("py_pdifree",str(pdifree)).\
-          replace("py_caselen",str(casenum)).\
-          replace("pyfylval",str(listnum)).\
-          replace("pyoutdir",str(destdir))
-    fw.write(fid)
-    fw.close()
-    fr.close()
-
-    subprocess.call(["qsub", outjob])
-
-
-def find_recent_file(destdir,keyword): #A replica of find_recent_traj_file
+def find_recent_file(destdir,keyword): 
 
     fylnames = destdir + '/' + keyword
     list_of_files = glob.glob(fylnames)

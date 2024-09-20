@@ -22,51 +22,58 @@ from my_gaussian_functions import run_gaussian
 from my_gaussian_functions import clean_backup_initfiles
 
 #----Input flags-------------------------------------------
-num_hrs   = 23 # Total number of hours for run
+num_hrs   = 8  # Total number of hours for run
 num_nodes = 1  # Number of nodes
 num_cores = 32 # Number of cores per node
 
 #---------Input details------------------------------------
-basis_fun = 'UB3LYP/6-31+G(2df,p)'
-maxcycle  = 200 # Max # of optim steps 
-maxstep   = 10  # Max size for an optim step = 0.01*maxstep Bohr 
-solv_arr  = ['water','THF','DME'] # THF, water (default), vacuum, DME
-scrf      = 'pcm' # SCRF method pcm/smd
+basis_fun    = 'UB3LYP/6-31+G(2df,p)'
+pop_style    = 'reg' # nbo/reg
+maxcycle     = 200 # Max # of optim steps 
+maxstep      = 10  # Max size for an optim step = 0.01*maxstep Bohr
+maxEstep     = 300 # maxEstep/1000 Bohr when moving from saddle pt
+solv_arr     = ['EthylEthanoate'] #water (default) THF, DiEthylEther
+scrf         = 'pcm' # SCRF method pcm/smd/Dipole
 multiplicity = 1 # Multiplicity is 1 unless it is a radical
-# Optional - if needed to specify one specific structure
-#inpfyle   = 'all' # If specific structure, add here for analysis
-
+# Add specific structures here or use 'all' keyword
+spec_struct  = ['b_P2S8_q2m_cis.cml', 'c_P1S3_q1m_mon.cml', \
+                'd_P2S6_q2m_2prime.cml','e_P2S8_q2m_endScharge.cml',\
+                'f_P2S7_q4m_cis.cml','g_P2S6_q2m_1PendStrans.cml',\
+                'h_P2S6_q4m_1Pcis.cml','i_P2S6_q2m_2primecis.cml',\
+                'j_P2S6_q2m_2primetrans.cml','k_P2S6_q4m_1Ptrans.cml']
+                
 #--------File lists--------------------------------------------
-com_files = ['equil_var.com','equil2_var.com','comp_nmr_var.com']
-sh_files  = ['gaussian_var.sh'] 
+com_files = ['optim_var.com']
+sh_files  = ['gauss_var.sh'] 
 
 #---------Directory info---------------------------------------
 maindir    = os.getcwd() #src_py dir
 src_com    = '/home/vaidyams/all_codes/naps/src_com' #src_com dir
 src_sh     = '/home/vaidyams/all_codes/naps/src_sh' #src_sh dir
-avog_dir   = '/home/vaidyams/all_codes/naps/avog_dir' #inp guess
+guess_dir  = '/home/vaidyams/all_codes/naps/init_structs' #inp guess
 scratchdir = '/projects/synthesis' #output dir
 gauss_exe  = 'g16' # lmp executable file
 scr_head   = 'naps_analysis' # head dir for scratch outputs
 
 #--------Find all/specific structure files-----------------------
 
-inp_struct_list = find_inp_files(avog_dir, spec_str_flag)
+inp_struct_list = find_inp_files(guess_dir, spec_struct)
 
 #---------main analysis------------------------------------------
-for structs in range(len(inp_struct_list)):
+for structs in inp_struct_list:
 
     workdir1 = scratchdir + '/' + scr_head   
     if not os.path.isdir(workdir1):
         os.mkdir(workdir1)
 
-    avog_inp_fyle = os.path.basename(structs)
-    avog_inp_root = avog_inp_fyle.split('.')[0]
-    workdir2  = workdir1 + '/' + avog_inp_root
+    inpfyle = os.path.basename(structs)
+    inproot = inpfyle.split('.')[0]
+    workdir2  = workdir1 + '/' + inproot
+
     if not os.path.isdir(workdir2):
         os.mkdir(workdir2)
 	
-    print("----Starting Gaussian calcs for " + avog_inp_root +\
+    print("----Starting Gaussian calcs for " + inproot +\
           "-----")
 
     # Analyze for different solvents
@@ -83,9 +90,9 @@ for structs in range(len(inp_struct_list)):
         print( "Current dir: ", destdir)
         
         #---Copying files------
-        print( "Copying files")
-
-        cpy_main_files(avog_dir,destdir,avog_inp_fyle)
+        print( "Copying files...")
+        
+        cpy_main_files(guess_dir,destdir,inpfyle)
                 
         for fyllist in range(len(com_files)):
             cpy_main_files(src_com,destdir,com_files[fyllist])
@@ -94,18 +101,16 @@ for structs in range(len(inp_struct_list)):
             cpy_main_files(src_sh,destdir,sh_files[fyllist])
 
         #---Write headers to input files------
-        print("Generating input Gaussian file")
-        edit_gen_inp_gauss_files(com_files,avog_inp_fyle,basis_fun,\
-                                 maxcycle,maxstep,solvent,scrf,multiplicity)
+        print("Generating input Gaussian file...")
+        edit_gen_inp_gauss_files(com_files,inpfyle,basis_fun,\
+                                 maxcycle,maxstep,maxEstep,scrf,\
+                                 solvent,pop_style,multiplicity)
 
 
         #---Edit and submit gauss_var.sh----------------
-        print("Editing and submitting submission script")
-        run_gaussian(sh_files[0],avog_inp_root,'job_gauss.sh',num_hrs,\
-                     num_nodes,num_cores)
+        print("Editing and submitting submission script...")
+        run_gaussian(sh_files[0],inproot,com_files[0],\
+                     'job_gauss.sh',num_hrs,num_nodes,num_cores)
 
         #---Cleaning up jobs----------------------------
-        clean_backup_files(destdir,avog_inp_file)
-
-        
-    
+        clean_backup_initfiles(destdir,inpfyle)    
