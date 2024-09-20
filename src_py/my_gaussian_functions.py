@@ -10,11 +10,13 @@ import glob
 import re
 import xml.etree.ElementTree as ET # For reading Avogadro cml/xml files
 
+#---Generic function to copy files with *different* src/dest names
 def my_cpy_generic(srcdir,destdir,inpfylname,destfylname):
     src_fyl  = srcdir  + '/' + inpfylname
     dest_fyl = destdir + '/' + destfylname
     shutil.copy2(src_fyl, dest_fyl)
 
+#---Generic function to copy files with *same* src/dest names
 def cpy_main_files(dum_maindir,dum_destdir,fylname):
 
     srcfyl = dum_maindir + '/' + fylname
@@ -26,6 +28,7 @@ def cpy_main_files(dum_maindir,dum_destdir,fylname):
     desfyl = dum_destdir + '/' + fylname
     shutil.copy2(srcfyl, desfyl)
 
+#---Function to find all initital structures with cml extension
 def find_inp_files(init_dir, inpstruct = 'all'):
 
     if not os.path.isdir(init_dir):
@@ -33,29 +36,30 @@ def find_inp_files(init_dir, inpstruct = 'all'):
 
     if isinstance(inpstruct,str):
         if inpstruct == 'all':
-            inplist = glob.glob(init_dir + '/*.cml') #Check cml files first
+            inplist = glob.glob(init_dir + '/*.cml') 
             if inpstruct == []:
                 raise RuntimeError('No cml input files found in ' + init_dir)
         else:
-            if not os.path.exists(init_dir + '/' + inpstruct):
+            if not os.path.exists(init_dir + '/' + inpstruct + '.cml'):
                 raise RuntimeError(inpfyle + ' not found in ' + init_dir)
-            inplist = [init_dir + '/' + inpstruct]
+            inplist = [init_dir + '/' + inpstruct + '.cml']
     elif isinstance(inpstruct,list):
         inplist = []
-        for fyle in inpstruct:                
-            fpath = init_dir + '/' + fyle
+        for structname in inpstruct:                
+            fpath = init_dir + '/' + structname + '.cml'
             if not os.path.exists(fpath):
                 print('ERROR', fpath, 'not found')
             else:
                 inplist.append(fpath)
         if inplist == []:
-             raise RuntimeError('No file in ' + inpstruct + \
-                                ' found in ' + init_dir)
+             raise RuntimeError('No specified input cml found in '\
+                                + init_dir)
     else:
         raise RuntimeError('Unknown type for spec_struct variable')
     
     return inplist
 
+#---Edits headers of Gaussian i/p & adds coordinates to the files
 def edit_gen_inp_gauss_files(com_files,inpfyle,basis_fun='6-31G**',\
                              maxcycle=100,maxstep=30,maxEstep=600,scrf='pcm',\
                              solvent='water',pop_style='reg',multiplicity=1):
@@ -98,6 +102,9 @@ def edit_gen_inp_gauss_files(com_files,inpfyle,basis_fun='6-31G**',\
 
         fw.write('\n') # Extra line at the end
 
+#---Functiont to obtain charges from filename
+#---Filename should be of the form *_qxm_*.cml where x is the charge
+#---and m is optional for minus (negative) charges
 def get_charges_from_fname(inpname):
     str_main = inpname.split('_')
     q_str    = [x for x in str_main if x[0] == 'q']
@@ -107,7 +114,8 @@ def get_charges_from_fname(inpname):
     qval = int(re.findall(r'\d+', q_str[0])[0])
     qval = -qval if 'm' in q_str[0] else qval
     return(qval)
-    
+
+#---Function to edit job submission files and submit jobs
 def run_gaussian(inpjob,structname,ginput='optim_var.com',\
                  outjob='submit.sh',tot_hrs=1,tot_nodes=1,tot_cores=1):
 
@@ -133,7 +141,7 @@ def run_gaussian(inpjob,structname,ginput='optim_var.com',\
     fr.close()
     subprocess.call(["sbatch", outjob])
     
-    
+#---Function to clean and backup files after generating i/p
 def clean_backup_initfiles(destdir,structfile):
     
     initdir = destdir + '/init_files'
@@ -149,7 +157,8 @@ def clean_backup_initfiles(destdir,structfile):
         if os.path.exists(fyl):
             cpy_main_files(destdir,initdir,fyl)
             os.remove(fyl)
-
+            
+#---Function to find recent file 
 def find_recent_file(destdir,keyword): 
 
     fylnames = destdir + '/' + keyword
@@ -162,3 +171,4 @@ def find_recent_file(destdir,keyword):
     else:
         return "nil"
     
+
