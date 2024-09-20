@@ -35,12 +35,13 @@ maxEstep     = 300 # maxEstep/1000 Bohr when moving from saddle pt
 solv_arr     = ['EthylEthanoate'] #water (default) THF, DiEthylEther
 scrf         = 'pcm' # SCRF method pcm/smd/Dipole
 multiplicity = 1 # Multiplicity is 1 unless it is a radical
+
 # Add specific structures here or use 'all' keyword
-spec_struct  = ['b_P2S8_q2m_cis.cml', 'c_P1S3_q1m_mon.cml', \
-                'd_P2S6_q2m_2prime.cml','e_P2S8_q2m_endScharge.cml',\
-                'f_P2S7_q4m_cis.cml','g_P2S6_q2m_1PendStrans.cml',\
-                'h_P2S6_q4m_1Pcis.cml','i_P2S6_q2m_2primecis.cml',\
-                'j_P2S6_q2m_2primetrans.cml','k_P2S6_q4m_1Ptrans.cml']
+spec_struct  = ['b_P2S8_q2m_cis', 'c_P1S3_q1m_mon', \
+                'd_P2S6_q2m_2prime','e_P2S8_q2m_endScharge',\
+                'f_P2S7_q4m_cis','g_P2S6_q2m_1PendStrans',\
+                'h_P2S6_q4m_1Pcis','i_P2S6_q2m_2primecis',\
+                'j_P2S6_q2m_2primetrans','k_P2S6_q4m_1Ptrans']
                 
 #--------File lists--------------------------------------------
 com_files = ['optim_var.com']
