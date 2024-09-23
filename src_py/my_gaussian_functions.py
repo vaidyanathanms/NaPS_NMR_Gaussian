@@ -1,7 +1,7 @@
 # Generic Function Definitions
 # Version_1: V_Sept_04_2024
 
-import numpy
+import numpy as np
 import os
 import shutil
 import subprocess
@@ -170,5 +170,68 @@ def find_recent_file(destdir,keyword):
         return fyl_arr[len(fyl_arr)-1]
     else:
         return "nil"
-    
 
+#---Function to create files to write outputs and headers
+def gen_output_files(outdir,nmr_elem='None', flag_nmr = 0,\
+                     flag_freq = 0, flag_nbo = 0):
+
+    if nmr_elem == 'None':
+        raise RuntimeError('ERROR: No reference for NMR analysis')
+    
+    fid_nmr = 0; fid_freq = 0; fid_nbo = 0
+
+    if flag_nmr:
+        fid_nmr  = open(outdir+'/'+nmr_elem +'_nmr_output.dat','w')
+        fid_nmr.write('%s\t%s\t %s\t%s\t %s\t%s\n' %('Structure','NReps',\
+                                                     'NMR_Freqs','NMR_FreqAvg',\
+                                                     'NMR_Shifts','NMR_ShiftAvg'))
+    if flag_freq:
+        fid_freq = open(outdir + '/freq_analysis.dat','w')
+    if flag_nbo:
+        fid_nbo  = open(outdir + '/freq_analysis.dat','w')
+    return fid_nmr, fid_freq, fid_nbo
+
+#---Function to compute the nmr frequency of the reference solution
+def compute_refzero_nmr(solvdir,log_file,nmr_ref_elem):
+    # Open file and process each line
+    value = 0; cnt = 0
+    with open(log_file,'r') as flog_id:
+        for line in flog_id:
+            line = line.strip()
+            if 'isotropy' in line and line.split()[1] == nmr_ref_elem:
+                value += float(line.split()[4]); cnt += 1
+                      
+    return float(value/cnt)
+
+#---Write NMR outputs to file
+def write_nmr_outputs(fid_nmr,nmrvals,ref_nmrfreq):
+    if len(nmrvals) == 0:
+        fid_nmr.write(f'{len(nmrvals)} \t Results not converged')
+    else:
+        fid_nmr.write("\t".join([str(value) for value in nmrvals]))
+        fid_nmr.write(f'\t {sum(nmrvals)/len(nmrvals)} \t') #Avg
+        fid_nmr.write("\t".join([str(value-ref_nmrfreq) \
+                                 for value in nmrvals]))
+        fid_nmr.write(f'\t {np.sum((np.array(nmrvals)-ref_nmrfreq))/len(nmrvals)}')
+        fid_nmr.write('\n') # End line
+        
+        
+#---Function to check log files are present in the directory 
+def is_logfile(destdir):
+
+    log_file = glob.glob(destdir + '/*.log')
+    if log_file == []:
+        return 'False'
+    elif len(log_file) == 1:
+        return log_file[0]
+    else:
+        return max(log_file,key=os.path.getctime)
+
+#---Close all output files
+def close_all_outfiles(flag_nmr, fid_nmr, flag_freq, fid_freq, \
+                       flag_nbo, fid_nbo):
+    if flag_nmr: fid_nmr.close()
+    if flag_freq: fid_freq.close()
+    if flag_nbo: fid_nbo.close()
+
+ 
