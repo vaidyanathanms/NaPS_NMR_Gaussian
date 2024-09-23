@@ -21,9 +21,11 @@ from my_gaussian_functions import write_nmr_outputs
 from my_gaussian_functions import close_all_outfiles
 
 #----Input flags-------------------------------------------
-flag_nmr  = 1  # Flag to compute NMR spectra
-flag_freq = 0  # Flag to process frequency
-flag_nbo  = 0  # Flag to process NBO
+flag_nmr   = 1  # Flag to compute NMR spectra
+flag_shift = 1  # Flag to compute NMR shift
+flag_freq  = 0  # Flag to process frequency
+flag_nbo   = 0  # Flag to process NBO
+
 
 nmr_ref_elem    = 'P' # Reference element for NMR spectra
 nmr_refzero_dir = 'ref_H3PO4_q0' # Reference solution dir
@@ -66,17 +68,23 @@ for solvent in solv_arr:
             print('ERROR: Reference solution directory for ' + \
                   solvent + ' not found!')
             fid_nmr.write(solvent + ' ref directory not found!')
-            continue
+            if flag_shift: continue
 
         log_file = is_logfile(ref_zerosolv_dir)
         if log_file == 'False':
             print('ERROR! No log files found in ' + ref_zerosolv_dir)
             fid_nmr.write(solvent + ' ref log file not found!')
-            continue
+            if flag_shift: continue
         
         ref_nmrfreq = compute_refzero_nmr(ref_zerosolv_dir,log_file,\
                                           nmr_ref_elem)
-        fid_nmr.write(f'NMR_Freq for reference in {solvent}: {ref_nmrfreq}')
+        if ref_nmrfreq == -1:
+            print('Isotropy keyword found, but no values for: ' + \
+                  nmr_ref_elem + ' in ' + ref_zerosolv_dir )
+            if flag_shift: continue
+
+        fid_nmr.write(f'\nNMR_Freq for reference in {solvent},'\
+                      f'{ref_nmrfreq}\n')
             
     for structname in spec_struct:
 
@@ -102,7 +110,7 @@ for solvent in solv_arr:
               +  solvent + '----')
 
         if flag_nmr:
-            fid_nmr.write(f'\n {structname} \t')
+            fid_nmr.write(f'{structname} ,')
 
         # Open file and process each line
         with open(log_file,'r') as flog_id:
@@ -114,7 +122,8 @@ for solvent in solv_arr:
                     nmrvals.append(float(line.split()[4]))
 
         # Average all values and write to outputs
-        if flag_nmr: write_nmr_outputs(fid_nmr,nmrvals,ref_nmrfreq)
+        if flag_nmr: write_nmr_outputs(fid_nmr,nmrvals,ref_nmrfreq,\
+                                       flag_shift)
         
 #---Close all opened files    
 close_all_outfiles(flag_nmr,fid_nmr, flag_freq,fid_freq, flag_nbo, fid_nbo)

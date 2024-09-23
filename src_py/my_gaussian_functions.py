@@ -181,10 +181,10 @@ def gen_output_files(outdir,nmr_elem='None', flag_nmr = 0,\
     fid_nmr = 0; fid_freq = 0; fid_nbo = 0
 
     if flag_nmr:
-        fid_nmr  = open(outdir+'/'+nmr_elem +'_nmr_output.dat','w')
-        fid_nmr.write('%s\t%s\t %s\t%s\t %s\t%s\n' %('Structure','NReps',\
-                                                     'NMR_Freqs','NMR_FreqAvg',\
-                                                     'NMR_Shifts','NMR_ShiftAvg'))
+        fid_nmr  = open(outdir+'/'+nmr_elem +'_nmr_output.csv','w')
+        fid_nmr.write('%s, %s, %s, %s,  %s, %s' %('Structure','NRef_Cntrs',\
+                                                  'NMR_Freqs','NMR_FreqAvg',\
+                                                  'NMR_Shifts','NMR_ShiftAvg'))
     if flag_freq:
         fid_freq = open(outdir + '/freq_analysis.dat','w')
     if flag_nbo:
@@ -200,21 +200,25 @@ def compute_refzero_nmr(solvdir,log_file,nmr_ref_elem):
             line = line.strip()
             if 'isotropy' in line and line.split()[1] == nmr_ref_elem:
                 value += float(line.split()[4]); cnt += 1
-                      
+
+    if cnt == 0:
+        return -1
     return float(value/cnt)
 
 #---Write NMR outputs to file
-def write_nmr_outputs(fid_nmr,nmrvals,ref_nmrfreq):
+def write_nmr_outputs(fid_nmr,nmrvals,ref_nmrfreq,fshift):
     if len(nmrvals) == 0:
-        fid_nmr.write(f'{len(nmrvals)} \t Results not converged')
+        fid_nmr.write(f'{len(nmrvals)} , Results not converged\n')
     else:
-        fid_nmr.write("\t".join([str(value) for value in nmrvals]))
-        fid_nmr.write(f'\t {sum(nmrvals)/len(nmrvals)} \t') #Avg
-        fid_nmr.write("\t".join([str(value-ref_nmrfreq) \
-                                 for value in nmrvals]))
-        fid_nmr.write(f'\t {np.sum((np.array(nmrvals)-ref_nmrfreq))/len(nmrvals)}')
-        fid_nmr.write('\n') # End line
-        
+        fid_nmr.write(f'{len(nmrvals)} ,') #Avg
+        fid_nmr.write(" , ".join([str(value) for value in nmrvals]))
+        fid_nmr.write(f', {sum(nmrvals)/len(nmrvals)} ,') #Avg
+        if fshift:
+            fid_nmr.write(" , ".join([str(ref_nmrfreq - value) \
+                                     for value in nmrvals]))
+            fid_nmr.write(' , %g\n' %(np.sum(ref_nmrfreq - \
+                                             np.array(nmrvals))/len(nmrvals)))
+            
         
 #---Function to check log files are present in the directory 
 def is_logfile(destdir):
