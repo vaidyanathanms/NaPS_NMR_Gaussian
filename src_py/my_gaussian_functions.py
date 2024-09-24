@@ -107,12 +107,14 @@ def edit_gen_inp_gauss_files(com_files,inpfyle,basis_fun='6-31G**',\
 #---and m is optional for minus (negative) charges
 def get_charges_from_fname(inpname):
     str_main = inpname.split('_')
-    q_str    = [x for x in str_main if x[0] == 'q']
-    if len(q_str) != 1:
-        raise RuntimeError('Input file format should have *_qxy_* in \
-        its filename and should repeat ONLY once!')
-    qval = int(re.findall(r'\d+', q_str[0])[0])
-    qval = -qval if 'm' in q_str[0] else qval
+    q_strarr = [[i,x] for i,x in enumerate(str_main) if x.startswith('q')]
+    if len(q_strarr) == 0:
+        raise RuntimeError('Input file format should have *_qxy_* in' \
+                           'its filename and should repeat ONLY once!')
+    for q_str in q_strarr:
+        if q_str[0] == 0: continue # can be the naming
+        qval = int(re.findall(r'\d+', q_str[1])[0])
+        qval = -qval if 'm' in q_str[1] else qval
     return(qval)
 
 #---Function to edit job submission files and submit jobs
