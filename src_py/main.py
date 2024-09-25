@@ -32,16 +32,15 @@ pop_style    = 'reg' # nbo/reg
 maxcycle     = 200 # Max # of optim steps 
 maxstep      = 10  # Max size for an optim step = 0.01*maxstep Bohr
 maxEstep     = 300 # maxEstep/1000 Bohr when moving from saddle pt
-solv_arr     = ['EthylEthanoate'] #water (default) THF, DiEthylEther
+solv_arr     = ['Water','THF','DiEthylEther','EthylEthanoate']
+#water (default) THF, DiEthylEther
 scrf         = 'pcm' # SCRF method pcm/smd/Dipole
 multiplicity = 1 # Multiplicity is 1 unless it is a radical
 
 # Add specific structures here or use 'all' keyword
-spec_struct  = ['b_P2S8_q2m_cis', 'c_P1S3_q1m_mon', \
-                'd_P2S6_q2m_2prime','e_P2S8_q2m_endScharge',\
-                'f_P2S7_q4m_cis','g_P2S6_q2m_1PendStrans',\
-                'h_P2S6_q4m_1Pcis','i_P2S6_q2m_2primecis',\
-                'j_P2S6_q2m_2primetrans','k_P2S6_q4m_1Ptrans']
+# DO NOT PROVIDE the cml extension
+spec_struct  = ['u_P2S5_q0_1Sbridge','v_P2S10_q2m_endS3sym'\
+                ,'w_P2S9_q2m_end2S3Sasym']
                 
 #--------File lists--------------------------------------------
 com_files = ['optim_var.com']
