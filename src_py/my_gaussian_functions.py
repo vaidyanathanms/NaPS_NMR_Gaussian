@@ -183,7 +183,8 @@ def gen_output_files(outdir,nmr_elem='None', flag_nmr = 0,\
     fid_nmr = 0; fid_freq = 0; fid_nbo = 0
 
     if flag_nmr:
-        fid_nmr  = open(outdir+'/'+nmr_elem +'_nmr_output.csv','w')
+        fylename = set_filename(outdir, nmr_elem +'_nmr_output','csv')
+        fid_nmr  = open(fylename,'w')
         fid_nmr.write('%s, %s, %s, %s,  %s, %s' %('Structure','NRef_Cntrs',\
                                                   'NMR_Freqs','NMR_FreqAvg',\
                                                   'NMR_Shifts','NMR_ShiftAvg'))
@@ -193,6 +194,22 @@ def gen_output_files(outdir,nmr_elem='None', flag_nmr = 0,\
         fid_nbo  = open(outdir + '/freq_analysis.dat','w')
     return fid_nmr, fid_freq, fid_nbo
 
+#---Function to set the filenames depending upon what is already there
+# in the directory
+def set_filename(dirname, fileroot, fmt='csv'):
+    fnames = dirname + '/' + fileroot + '.' + fmt
+    if glob.glob(fnames) == []:
+        return flist
+
+    froots  = [item.replace('.csv','') for item in glob.glob(fnames)]
+    root_id = [item.split('_')[-1] for item in froots if '_' in item]
+    num_ids = [int(item) for item in root_id if item.isdigit()]
+    if num_ids:
+        return dirname + '/' + fileroot + '_' + str(max(num_ids)+1) +\
+            '.' + fmt
+    else:
+        return dirname + '/' + fileroot + '_1.' + fmt
+        
 #---Function to compute the nmr frequency of the reference solution
 def compute_refzero_nmr(solvdir,log_file,nmr_ref_elem):
     # Open file and process each line
