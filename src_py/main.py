@@ -39,8 +39,8 @@ multiplicity = 1 # Multiplicity is 1 unless it is a radical
 
 # Add specific structures here or use 'all' keyword
 # DO NOT PROVIDE the cml extension
-spec_struct  = ['u_P2S5_q0_1Sbridge','v_P2S10_q2m_endS3sym'\
-                ,'w_P2S9_q2m_end2S3Sasym']
+spec_struct  = ['x_P2S9Na2_q0_end2S3Sasym'] #'u_P2S5_q0_1Sbridge','v_P2S10_q2m_endS3sym'\
+                #,'w_P2S9_q2m_end2S3Sasym']
                 
 #--------File lists--------------------------------------------
 com_files = ['optim_var.com']
@@ -48,10 +48,10 @@ sh_files  = ['gauss_var.sh']
 
 #---------Directory info---------------------------------------
 maindir    = os.getcwd() #src_py dir
-src_com    = '/home/vaidyams/all_codes/naps/src_com' #src_com dir
-src_sh     = '/home/vaidyams/all_codes/naps/src_sh' #src_sh dir
-guess_dir  = '/home/vaidyams/all_codes/naps/init_structs' #inp guess
-scratchdir = '/projects/synthesis' #output dir
+src_com    = '/home/vaidyams/all_codes/files_naps/src_com' #src_com dir
+src_sh     = '/home/vaidyams/all_codes/files_naps/src_sh' #src_sh dir
+guess_dir  = '/home/vaidyams/all_codes/files_naps/init_structs' #inp guess
+scratchdir = '/projects/iontransport' #output dir
 gauss_exe  = 'g16' # lmp executable file
 scr_head   = 'naps_analysis' # head dir for scratch outputs
 
