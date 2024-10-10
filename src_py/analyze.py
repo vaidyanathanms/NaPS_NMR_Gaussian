@@ -32,15 +32,14 @@ nmr_refzero_dir = 'ref_H3PO4_q0' # Reference solution dir
 
 #---------Input details------------------------------------
 solv_arr     = ['Water','THF', 'DiethylEther', 'EthylEthanoate']
-spec_struct  = ['b_P2S8_q2m_cis', 'c_P1S3_q1m_mon', \
-                'd_P2S6_q2m_2prime','e_P2S8_q2m_endScharge',\
-                'f_P2S7_q4m_cis','g_P2S6_q2m_1PendStrans',\
-                'h_P2S6_q4m_1Pcis','i_P2S6_q2m_2primecis',\
-                'j_P2S6_q2m_2primetrans','k_P2S6_q4m_1Ptrans']
+spec_struct  = ['u_P2S5_q0_1Sbridge','v_P2S10_q2m_endS3sym'\
+                ,'w_P2S9_q2m_end2S3Sasym']
+#spec_struct  = ['q_P2S6Na2_q0_cis','r_P2S6Na_qm1_1sodium',\
+#                's_P2S8Na2_q0_cis','t_P2S8Na2_qm1_1sodium']
 
 #---------Directory info---------------------------------------
 maindir    = os.getcwd() #src_py dir
-scratchdir = '/projects/synthesis' #output dir
+scratchdir = '/projects/iontransport' #output dir
 scr_head   = 'naps_analysis' # head dir for scratch outputs
 
 #---------Generate required output files-----------------------
