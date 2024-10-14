@@ -9,6 +9,7 @@ import sys
 import glob
 import re
 import xml.etree.ElementTree as ET # For reading Avogadro cml/xml files
+from pathlib import Path
 
 #---Generic function to copy files with *different* src/dest names
 def my_cpy_generic(srcdir,destdir,inpfylname,destfylname):
@@ -197,13 +198,14 @@ def gen_output_files(outdir,nmr_elem='None', flag_nmr = 0,\
 #---Function to set the filenames depending upon what is already there
 # in the directory
 def set_filename(dirname, fileroot, fmt='csv'):
-    fnames = dirname + '/' + fileroot + '.' + fmt
-    if glob.glob(fnames) == []:
-        return flist
+    fnames = glob.glob(dirname + '/' + fileroot + '*')
+    if fnames == []:
+        return dirname + '/' + fileroot + '.' + fmt
 
-    froots  = [item.replace('.csv','') for item in glob.glob(fnames)]
+    froots  = [Path(item).stem for item in fnames]
     root_id = [item.split('_')[-1] for item in froots if '_' in item]
     num_ids = [int(item) for item in root_id if item.isdigit()]
+    
     if num_ids:
         return dirname + '/' + fileroot + '_' + str(max(num_ids)+1) +\
             '.' + fmt
