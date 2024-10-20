@@ -176,24 +176,33 @@ def find_recent_file(destdir,keyword):
 
 #---Function to create files to write outputs and headers
 def gen_output_files(outdir,nmr_elem='None', flag_nmr = 0,\
-                     flag_freq = 0, flag_nbo = 0):
+                     flag_freq = 0, flag_nbo = 0, flag_ener = 1):
 
     if nmr_elem == 'None':
         raise RuntimeError('ERROR: No reference for NMR analysis')
     
-    fid_nmr = 0; fid_freq = 0; fid_nbo = 0
+    fid_nmr = 0; fid_freq = 0; fid_nbo = 0; fid_eall = 0; fid_eeqbm = 0
 
+    if flag_ener:
+        fid_eall  = open(outdir + '/all_energy.dat','w')
+        fid_eeqbm = open(outdir + '/all_eqbmenergy.dat','w')
+        fid_eeqbm.write('%s\t%s\t%s\t%s\n%s\n' %('Structure','Solvent',\
+                                                'SCF_Energy',\
+                                                'Thermal_Correction',\
+                                                'Total'))
+    
     if flag_nmr:
         fylename = set_filename(outdir, nmr_elem +'_nmr_output','csv')
         fid_nmr  = open(fylename,'w')
         fid_nmr.write('%s, %s, %s, %s,  %s, %s' %('Structure','NRef_Cntrs',\
                                                   'NMR_Freqs','NMR_FreqAvg',\
                                                   'NMR_Shifts','NMR_ShiftAvg'))
+        if flag_ener: fid_nmr.write(', ETot')
     if flag_freq:
         fid_freq = open(outdir + '/freq_analysis.dat','w')
     if flag_nbo:
         fid_nbo  = open(outdir + '/freq_analysis.dat','w')
-    return fid_nmr, fid_freq, fid_nbo
+    return fid_nmr, fid_freq, fid_nbo, fid_eall, fid_eeqbm
 
 #---Function to set the filenames depending upon what is already there
 # in the directory
@@ -211,7 +220,31 @@ def set_filename(dirname, fileroot, fmt='csv'):
             '.' + fmt
     else:
         return dirname + '/' + fileroot + '_1.' + fmt
-        
+
+#---Main function to read and process the logfile
+def analyze_from_logfile(log_file,flag_nmr=0,nmr_ref_elem='P',\
+                         flag_energy=1):
+    # Open file and process each line
+    efind = -1
+    nmr_dum = []; scf_dum = []; Tcorr_dum = []
+    with open(log_file,'r') as flog_id:
+        for line in flog_id:
+            line = line.strip()
+            if flag_nmr and 'isotropy' in line and\
+               line.split()[1] == nmr_ref_elem:
+                nmr_dum.append(float(line.split()[4]))
+            if flag_energy and 'SCF Done:' in line:
+                E_eqbm = re.search(r"E\(UB3LYP\)\s*=\s*(-?\d+\.\d+)",\
+                                   line)
+                if E_eqbm:
+                    scf_dum.append(float(E_eqbm.group(1)))
+            if flag_energy and 'Thermal correction to Energy=' \
+               in line:
+                Tcorr_dum.append(line.split(' ')[-1])
+
+    return nmr_dum, scf_dum, Tcorr_dum
+
+    
 #---Function to compute the nmr frequency of the reference solution
 def compute_refzero_nmr(solvdir,log_file,nmr_ref_elem):
     # Open file and process each line
@@ -227,7 +260,8 @@ def compute_refzero_nmr(solvdir,log_file,nmr_ref_elem):
     return float(value/cnt)
 
 #---Write NMR outputs to file
-def write_nmr_outputs(fid_nmr,nmrvals,ref_nmrfreq,fshift):
+def write_nmr_outputs(fid_nmr,nmrvals,ref_nmrfreq,fshift,\
+                      flag_ener,scf_arr,Tcorr_arr):
     if len(nmrvals) == 0:
         fid_nmr.write(f'{len(nmrvals)} , Results not converged\n')
     else:
@@ -237,10 +271,44 @@ def write_nmr_outputs(fid_nmr,nmrvals,ref_nmrfreq,fshift):
         if fshift:
             fid_nmr.write(" , ".join([str(ref_nmrfreq - value) \
                                      for value in nmrvals]))
-            fid_nmr.write(' , %g\n' %(np.sum(ref_nmrfreq - \
-                                             np.array(nmrvals))/len(nmrvals)))
+            fid_nmr.write(' , %g' %(np.sum(ref_nmrfreq - \
+                                           np.array(nmrvals))/len(nmrvals)))
+        if flag_ener:
+            fid_nmr.write(f', {float(scf_arr[-1])+float(Tcorr_arr[-1])}')#Etot
+        fid_nmr.write('\n')
             
+#---Write NMR outputs to file
+def write_ener_outputs(fid_eall,fid_eeqbm,scf_arr,Tcorr_arr):
+    if len(Tcorr_arr) == 0:
+        [fid_eall.write(f'{float(en_val)}\n') for en_val in scf_arr] #All-E
+        fid_eall.write(f'Results not converged\n')
+        fid_eeqbm.write(f'Results not converged\n')
+    else:
+        [fid_eall.write(f'{float(en_val)}\n') for en_val in scf_arr] #All-E
+        fid_eeqbm.write(f'{float(scf_arr[-1])} \t {float(Tcorr_arr[-1])} \t')
+        fid_eeqbm.write(f'{float(scf_arr[-1])+float(Tcorr_arr[-1])}\n')#Etot
         
+#---Find all possible combinations of structural directories
+def find_all_structs(headdir,spec_struct=['e']):
+    if len(spec_struct) == 1:
+        dirlist = []
+        if spec_struct[0] == 'all':
+            for dirpath in glob.glob(headdir + '/*/'):
+                dirlist.append(os.path.basename(os.path.normpath(dirpath)))
+        elif len(spec_struct[0].split('-')) == 0: #single letter
+            for dirpath in glob.glob(headdir+'/'+spec_struct[0]+'*/'):
+                dirlist.append(os.path.basename(os.path.normpath(dirpath)))
+        elif len(spec_struct[0].split('-')) == 1: #range
+            alpharange = [chr(i) for i in range(ord(spec_struct[0].split('-')[0])\
+                                               ,ord(spec_struct[0].split('-')[1])+1)]
+            for char in alpharange:
+                allchardir = glob.glob(headdir + '/' + char + '*/')
+                for dirpath in allchardir:
+                    dirlist.append(os.path.basename(os.path.normpath(dirpath)))
+        return dirlist
+    else:
+        return spec_struct
+                
 #---Function to check log files are present in the directory 
 def is_logfile(destdir):
 
@@ -254,9 +322,11 @@ def is_logfile(destdir):
 
 #---Close all output files
 def close_all_outfiles(flag_nmr, fid_nmr, flag_freq, fid_freq, \
-                       flag_nbo, fid_nbo):
+                       flag_nbo, fid_nbo, flag_ener, fid_eall, fid_eeqbm):
     if flag_nmr: fid_nmr.close()
     if flag_freq: fid_freq.close()
     if flag_nbo: fid_nbo.close()
+    if flag_ener: fid_eall.close(); fid_eeqbm.close()
+    
 
  
