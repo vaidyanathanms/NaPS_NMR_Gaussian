@@ -1,5 +1,5 @@
 #----To analyze the log files from Gaussian outputs--------
-#----Author: Vaidyanathan Seecthuraman-----------------------
+#----Author: Vaidyanathan Sethuraman-----------------------
 #----Date: Sept-01-2024------------------------------------
 #----Requirements: my_gaussian_functions.py----------------
 
