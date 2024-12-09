@@ -27,20 +27,18 @@ num_nodes = 1  # Number of nodes
 num_cores = 32 # Number of cores per node
 
 #---------Input details------------------------------------
-basis_fun    = 'UB3LYP/6-31+G(2df,p)'
+basis_fun    = 'UB3LYP/6-311+G(d,p)'
 pop_style    = 'reg' # nbo/reg
 maxcycle     = 200 # Max # of optim steps 
 maxstep      = 10  # Max size for an optim step = 0.01*maxstep Bohr
 maxEstep     = 300 # maxEstep/1000 Bohr when moving from saddle pt
-solv_arr     = ['Water','THF','DiEthylEther','EthylEthanoate']
-#water (default) THF, DiEthylEther
+solv_arr     = ['Water','THF']#,'EthylEthanoate'] #water (default) THF, DiEthylEther
 scrf         = 'pcm' # SCRF method pcm/smd/Dipole
 multiplicity = 1 # Multiplicity is 1 unless it is a radical
 
 # Add specific structures here or use 'all' keyword
 # DO NOT PROVIDE the cml extension
-spec_struct  = ['x_P2S9Na2_q0_end2S3Sasym'] #'u_P2S5_q0_1Sbridge','v_P2S10_q2m_endS3sym'\
-                #,'w_P2S9_q2m_end2S3Sasym']
+spec_struct  = ['y_PS4_qm3_verification','z_PS3_qm1_verification']
                 
 #--------File lists--------------------------------------------
 com_files = ['optim_var.com']
@@ -53,7 +51,7 @@ src_sh     = '/home/vaidyams/all_codes/files_naps/src_sh' #src_sh dir
 guess_dir  = '/home/vaidyams/all_codes/files_naps/init_structs' #inp guess
 scratchdir = '/projects/iontransport' #output dir
 gauss_exe  = 'g16' # lmp executable file
-scr_head   = 'naps_analysis' # head dir for scratch outputs
+scr_head   = 'naps_analysis_311dpdiff' # head dir for scratch outputs
 
 #--------Find all/specific structure files-----------------------
 

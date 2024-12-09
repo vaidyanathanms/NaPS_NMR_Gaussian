@@ -238,7 +238,7 @@ def analyze_from_logfile(log_file,flag_nmr=0,nmr_ref_elem='P',\
                                    line)
                 if E_eqbm:
                     scf_dum.append(float(E_eqbm.group(1)))
-            if flag_energy and 'Thermal correction to Energy=' \
+            if flag_energy and 'Thermal correction to Gibbs Free Energy=' \
                in line:
                 Tcorr_dum.append(line.split(' ')[-1])
 

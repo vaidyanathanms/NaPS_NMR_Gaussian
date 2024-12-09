@@ -34,9 +34,9 @@ nmr_ref_elem    = 'P' # Reference element for NMR spectra
 nmr_refzero_dir = 'ref_H3PO4_q0' # Reference solution dir
 
 #---------Input details------------------------------------
-solv_arr     = ['Water','THF']#, 'DiethylEther', 'EthylEthanoate']
+solv_arr     = ['Water','THF','DiethylEther', 'EthylEthanoate']
 # all, structs w/o .cml, single letter or initial to final letters
-spec_struct  = ['all']
+spec_struct  = ['q_P2S6Na2_q0_cis','b_P2S8_q2m_cis']
 #spec_struct  = ['q_P2S6Na2_q0_cis','r_P2S6Na_qm1_1sodium',\
 #                's_P2S8Na2_q0_cis','t_P2S8Na2_qm1_1sodium']
 
